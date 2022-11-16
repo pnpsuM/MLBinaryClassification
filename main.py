@@ -1,10 +1,9 @@
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # metadata
 # "name" is unique(891)
@@ -111,5 +110,3 @@ print(dataset.head())
 
 # trim the cabin *
 # dataset['Cabin'] = dataset.apply(lambda row: row['Cabin'][0:1], axis=1)
-
-

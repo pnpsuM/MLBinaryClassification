@@ -1,9 +1,9 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import matplotlib.pyplot as plt
-from keras.models import Model, Sequential
-from keras.layers import Dense, Input, Dropout, BatchNormalization
+from keras.layers import BatchNormalization, Dense, Dropout, Input
+from keras.models import Model
 
 param = {'D0':13, 'D1':8, 'Dropout': 0.2}
 
