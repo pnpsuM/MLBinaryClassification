@@ -148,9 +148,9 @@ class Titanic():
     x_train = self._train.iloc[:, 1:20].values.astype(np.float32)
     y_train = self._train.iloc[:, 0].values.astype(np.float32)
     x_test = self._test.iloc[:, 1:20].values.astype(np.float32)
-    y_test = self._test.iloc[:, 0].values.astype(np.float32)
+    _ = self._test.iloc[:, 0].values.astype(np.float32)
     
-    self.data_dict = {'x_train' : x_train, 'y_train': y_train, 'x_test': x_test, 'y_test': y_test}
+    self.data_dict = {'x_train' : x_train, 'y_train': y_train, 'x_test': x_test}
     print("Returned Data Dictionary")
     
     return self.data_dict
