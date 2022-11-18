@@ -1,5 +1,5 @@
-import numpy as np 
-import pandas as pd 
+import pandas as pd
+import numpy as np
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 from keras.wrappers.scikit_learn import KerasClassifier
@@ -7,7 +7,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout
 
 class Titanic():
-  def __init__(self, path = f'datasets/'):
+  def __init__(self, path = f'datasets/', **kwargs):
     print('Initializing...')
     self._original = None
     self._data = None
@@ -16,17 +16,21 @@ class Titanic():
     self._test = None
     self._scaler = StandardScaler()
     self._encoder = LabelEncoder()
-    self.ReadData(path)
+    self.ReadData(path, show_head = kwargs['show_head'])
     
-  def ReadData(self, path, get = False, show_head =True):    
-    df_train = pd.read_csv(path + "train.csv")
-    df_test = pd.read_csv(path + "test.csv")
-    df_train['Type'] = 'train'
-    df_test['Type'] = 'test'
-    
+  def ReadData(self, path, show_head =True, test_only = False, get = False):
+    if not test_only:
+      df_train = pd.read_csv(path + "train.csv")
+      df_test = pd.read_csv(path + "test.csv")
+      df_train['Type'] = 'train'
+      df_test['Type'] = 'test'
+      self._data = pd.concat([df_train, df_test])
+    else:
+      df_test = pd.read_csv(path + "test.csv")
+      df_test['Type'] = 'test'
+      self._data = df_test
+      
     print('Data Loaded.')
-    
-    self._data = pd.concat([df_train, df_test])
     if show_head:
       print(self._data.head())
     
@@ -34,11 +38,16 @@ class Titanic():
       return self._data
     
   def Preprocess(self, map, titles, get = False):
+    print("Data Preprocessing...")
     self.TitleExtraction(map, titles)
     self.FamilySizeExtraction()
     self.IfChild()
     self.FillOut()
+    self.FamilySurvival()
+    self._data = self._data.drop(columns = ['Age','Cabin','Embarked','Name','Last_Name',
+                                            'Parch', 'SibSp','Ticket', 'Family_Size'])
     self.FeatureEncoding()
+    print("Done Preprocessing.")
     
     if get:
       return self._data
@@ -52,7 +61,8 @@ class Titanic():
     
     for title in titles:
       median_age = self._data.groupby('Title')['Age'].median()[titles.index(title)]
-      self._data.loc[(self._data['Age'].isnull()) & (self._data['Title'] == title), 'Age'] = median_age
+      self._data.loc[(self._data['Age'].isnull()) & (self._data['Title'] == title), 'Age'] =\
+        median_age
   
   def FamilySizeExtraction(self):    
     self._data['Family_Size'] = self._data['Parch'] + self._data['SibSp'] + 1
@@ -65,6 +75,36 @@ class Titanic():
     fa = self._data[self._data["Pclass"] == 3]
     self._data['Fare'].fillna(fa['Fare'].median(), inplace = True)
     
+  def FamilySurvival(self):
+    DEFAULT_SURVIVAL_VALUE = 0.5
+    self._data['Last_Name'] = self._data['Name'].apply(lambda x: str.split(x, ",")[0])
+    self._data['Family_Survival'] = DEFAULT_SURVIVAL_VALUE
+    # Initialize Fam_Sur column with 0.5
+    for group, group_df in self._data[['Survived','Name', 'Last_Name', 'Fare', 'Ticket', 'PassengerId',
+                                    'SibSp', 'Parch', 'Age', 'Cabin']].groupby(['Last_Name', 'Fare']):
+      # Same LN and Fare => Family Group, and makes df out of them
+      if (len(group_df)) != 1:
+        # When a family group is found
+        for i, row in group_df.iterrows():
+          smax = group_df.drop(i)['Survived'].max()
+          smin = group_df.drop(i)['Survived'].min()
+          pass_id = row['PassengerId']
+          if (smax == 1.):
+            self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 1
+          elif (smin == 0.):
+            self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 0
+    for _, group_df in self._data.groupby('Ticket'):
+      if (len(group_df) != 1):
+        for i, row in group_df.iterrows():
+          if (row['Family_Survival'] == 0) or (row['Family_Survival'] == 0.5):
+            smax = group_df.drop(i)['Survived'].max()
+            smin = group_df.drop(i)['Survived'].min()
+            pass_id = row['PassengerId']
+            if (smax == 1.):
+              self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 1
+            elif (smin == 0.):
+              self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 0
+    
   def FeatureEncoding(self):
     # Encoding features
     target_col = ["Survived"]
@@ -73,7 +113,8 @@ class Titanic():
     cat_cols   = [x for x in cat_cols ]
     
     # numerical columns
-    num_cols   = [x for x in self._data.columns if x not in cat_cols + target_col + id_dataset]
+    num_cols   = [x for x in self._data.columns if (x not in cat_cols + target_col + \
+      id_dataset)]
     # Binary columns with 2 values
     bin_cols   = self._data.nunique()[self._data.nunique() == 2].keys().tolist()
     # Columns more than 2 values
@@ -104,11 +145,23 @@ class Titanic():
     self._test = self._data[self._data['Type'] == 0].drop(columns = ['Type'])
 
     # X and Y
-    x_train = self._train.iloc[:, 1:20].as_matrix()
-    y_train = self._train.iloc[:,0].as_matrix()
-    x_test = self._test.iloc[:, 1:20].as_matrix()
-    y_test = self._test.iloc[:, 0].as_matrix()
+    x_train = self._train.iloc[:, 1:20].values.astype(np.float32)
+    y_train = self._train.iloc[:, 0].values.astype(np.float32)
+    x_test = self._test.iloc[:, 1:20].values.astype(np.float32)
+    y_test = self._test.iloc[:, 0].values.astype(np.float32)
     
     self.data_dict = {'x_train' : x_train, 'y_train': y_train, 'x_test': x_test, 'y_test': y_test}
+    print("Returned Data Dictionary")
     
     return self.data_dict
+  
+  def GetTestXandY(self):
+    self._test = self._data[self._data['Type'] == 0].drop(columns = ['Type'])
+    x_test = self._test.iloc[:, 1:20].values.astype(np.float32)
+    y_test = self._test.iloc[:, 0].values.astype(np.float32)
+    
+    self.data_dict = {'x_test': x_test, 'y_test': y_test}
+    print("Returned Data Dictionary")
+    
+    return self.data_dict
+    
