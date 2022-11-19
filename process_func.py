@@ -1,10 +1,6 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.model_selection import cross_val_score, StratifiedKFold
-from keras.wrappers.scikit_learn import KerasClassifier
-from keras.models import Sequential
-from keras.layers import Dense, Dropout
 
 class Titanic():
   def __init__(self, path = f'datasets/', **kwargs):
@@ -25,6 +21,7 @@ class Titanic():
       df_train['Type'] = 'train'
       df_test['Type'] = 'test'
       self._data = pd.concat([df_train, df_test])
+      # Concatenate train and test data and save it in a Variable
     else:
       df_test = pd.read_csv(path + "test.csv")
       df_test['Type'] = 'test'
@@ -37,13 +34,15 @@ class Titanic():
     if get:
       return self._data
     
-  def Preprocess(self, map, titles, get = False):
+  def Preprocess(self, map, titles, VERSION, prepath = f'preprocessed', get = False):
+    # Make a definition of a func. elsewhere and add it here before FeatureEncoding()
     print("Data Preprocessing...")
     self.TitleExtraction(map, titles)
     self.FamilySizeExtraction()
     self.IfChild()
     self.FillOut()
     self.FamilySurvival()
+    self._data.to_csv(prepath + f"/preprocessed_{VERSION}.csv", index = False)
     self._data = self._data.drop(columns = ['Age','Cabin','Embarked','Name','Last_Name',
                                             'Parch', 'SibSp','Ticket', 'Family_Size'])
     self.FeatureEncoding()
