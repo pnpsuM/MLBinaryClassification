@@ -43,7 +43,7 @@ class Titanic():
     self.FillOut()
     self.FamilySurvival()
     self._data.to_csv(prepath + f"/preprocessed_{VERSION}.csv", index = False)
-    self._data = self._data.drop(columns = ['Age','Cabin','Embarked','Name','Last_Name',
+    self._data = self._data.drop(columns = ['Age','Cabin','Name','Last_Name',
                                             'Parch', 'SibSp','Ticket', 'Family_Size'])
     self.FeatureEncoding()
     print("Done Preprocessing.")

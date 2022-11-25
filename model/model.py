@@ -6,7 +6,7 @@ from keras.callbacks import TensorBoard
 import tensorflow as tf
 import pandas as pd
 
-param = {'Dense16':16, 'Dense8':8, 'Dense32':32, 'Dropout': 0.3}
+param = {'Dense16':16, 'Dense8':8, 'Dense32':32, 'Dense64':64, 'Dense128': 128, 'Dropout': 0.2}
 
 def ReferenceModel(input_shape):
     inputs = Input(shape = input_shape[-1], name = 'Input')
@@ -21,11 +21,19 @@ def ReferenceModel(input_shape):
 
 def ProjectModel(input_shape):
     inputs = Input(shape = input_shape[-1], name = 'Input')
-    x = Dense(param['Dense32'], activation='swish', name = 'Dense0')(inputs)
-    x = Dense(param['Dense16'], activation='swish', name = 'Dense1')(x)
-    x = Dense(param['Dense8'], activation='swish', name = 'Dense2')(x)
+    
+    x = Dense(param['Dense16'], activation='tanh', name = 'Dense0')(inputs)
     x = Dropout(param['Dropout'])(x)
     x = BatchNormalization()(x)
+    
+    x = Dense(param['Dense16'], activation='tanh', name = 'Dense1')(x)
+    x = Dropout(param['Dropout'])(x)
+    x = BatchNormalization()(x)
+    
+    x = Dense(param['Dense16'], activation='tanh', name = 'Dense2')(x)
+    x = Dropout(param['Dropout'])(x)
+    x = BatchNormalization()(x)
+    
     outputs = Dense(1, activation='sigmoid', name = 'Output')(x)
     model = Model(inputs = inputs, outputs = outputs, name = 'ProjectModel')
     model.compile(loss = 'binary_crossentropy', optimizer='adam')
