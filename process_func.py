@@ -75,41 +75,46 @@ class Titanic():
     self._data['Fare'].fillna(fa['Fare'].median(), inplace = True)
     
   def FamilySurvival(self):
-    DEFAULT_SURVIVAL_VALUE = 0.5
+    DEFAULT_SURVIVAL_VALUE = 0
     self._data['Last_Name'] = self._data['Name'].apply(lambda x: str.split(x, ",")[0])
     self._data['Family_Survival'] = DEFAULT_SURVIVAL_VALUE
     # Initialize Fam_Sur column with 0.5
-    for group, group_df in self._data[['Survived','Name', 'Last_Name', 'Fare', 'Ticket', 'PassengerId',
-                                    'SibSp', 'Parch', 'Age', 'Cabin']].groupby(['Last_Name', 'Ticket']):
+    for _, group_df in self._data[['Survived','Name', 'Last_Name', 'Fare', 'Ticket', 'PassengerId',
+                                    'SibSp', 'Parch', 'Age', 'Type']].groupby(['Last_Name', 'Ticket']):
       # Same LN and Fare => Family Group, and makes df out of them
       if (len(group_df)) != 1:
         # When a family group is found
+        cnt = group_df.loc[group_df['Type'] != 'test', 'Survived'].sum()
+        cnt /= len(group_df.loc[group_df['Type'] != 'test'])
         for i, row in group_df.iterrows():
-          smax = group_df.drop(i)['Survived'].max()
-          smin = group_df.drop(i)['Survived'].min()
           pass_id = row['PassengerId']
-          if (smax == 1.):
-            self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 1
-          elif (smin == 0.):
-            self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 0
-    for _, group_df in self._data.groupby('Ticket'):
-      if (len(group_df) != 1):
-        for i, row in group_df.iterrows():
-          if (row['Family_Survival'] == 0) or (row['Family_Survival'] == 0.5):
-            smax = group_df.drop(i)['Survived'].max()
-            smin = group_df.drop(i)['Survived'].min()
-            pass_id = row['PassengerId']
-            if (smax == 1.):
-              self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 1
-            elif (smin == 0.):
-              self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 0
+          self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = cnt
+        #   s_value = group_df.drop(i)['Survived']
+        #   print(s_value)
+        #   print(type(s_value))
+        #   if (s_value == 1.):
+        #     self._data.loc[self._data['PassengerId'] == row['PassengerId'], 'Family_Survival'] += 1
+        # self._data.loc[self._data['PassengerId'] == row['PassengerId'], 'Family_Survival'] /= \
+        #   len(group_df)
+    # for _, group_df in self._data.groupby('Ticket'):
+    #   if (len(group_df) != 1):
+    #     for i, row in group_df.iterrows():
+    #       if (row['Family_Survival'] == 0) or (row['Family_Survival'] == 0.5):
+    #         smax = group_df.drop(i)['Survived'].max()
+    #         smin = group_df.drop(i)['Survived'].min()
+    #         pass_id = row['PassengerId']
+    #         if (smax == 1.):
+    #           self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 1
+    #         elif (smin == 0.):
+    #           self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 0
+              ##
     
   def FeatureEncoding(self):
     # Encoding features
     target_col = ["Survived"]
     id_dataset = ["Type"]
     cat_cols   = self._data.nunique()[self._data.nunique() < 12].keys().tolist()
-    cat_cols   = [x for x in cat_cols ]
+    cat_cols   = [x for x in cat_cols if x != 'FamilySurvival']
     
     # numerical columns
     num_cols   = [x for x in self._data.columns if (x not in cat_cols + target_col + \
