@@ -22,15 +22,15 @@ def ReferenceModel(input_shape):
 def ProjectModel(input_shape):
     inputs = Input(shape = input_shape[-1], name = 'Input')
     
-    x = Dense(param['Dense16'], activation='tanh', name = 'Dense0')(inputs)
+    x = Dense(param['Dense64'], activation='swish', name = 'Dense0')(inputs)
     x = Dropout(param['Dropout'])(x)
     x = BatchNormalization()(x)
     
-    x = Dense(param['Dense16'], activation='tanh', name = 'Dense1')(x)
+    x = Dense(param['Dense32'], activation='swish', name = 'Dense1')(x)
     x = Dropout(param['Dropout'])(x)
     x = BatchNormalization()(x)
     
-    x = Dense(param['Dense16'], activation='tanh', name = 'Dense2')(x)
+    x = Dense(param['Dense32'], activation='swish', name = 'Dense2')(x)
     x = Dropout(param['Dropout'])(x)
     x = BatchNormalization()(x)
     
@@ -84,8 +84,6 @@ def PerformanceCheck(model, CP_path, data, DATA_DIR):
             match += 1
         else:
             nomatch += 1
-
-    print(f'{model.name}_Accuracy : {match/data_check.shape[-2] * 100 : .2f} %')
     temp = pd.DataFrame(pd.read_csv(DATA_DIR + "test.csv")['PassengerId'])
     temp['Survived'] = data_check['final']
     return temp
