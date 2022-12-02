@@ -39,7 +39,7 @@ class Titanic():
     print("Data Preprocessing...")
     self.TitleExtraction(map, titles)
     self.FamilySizeExtraction()
-    self.IfChildOrElder()
+    self.IfBabyOrElder()
     self.FillOut()
     self.FamilySurvival()
     self._data = self._data.drop(columns = ['Age','Cabin','Name','Last_Name', 'Family_Size',
@@ -70,7 +70,7 @@ class Titanic():
     # self._data.loc[:,'Small_Family'] = 0
     # self._data.loc[(self._data['Family_Size'] < 2),'Small_Family'] = 1
 
-  def IfChildOrElder(self):
+  def IfBabyOrElder(self):
     self._data.loc[:,'Baby'] = 1
     self._data.loc[(self._data['Age'] > 4),'Baby'] = 0
     self._data.loc[:,'Elder'] = 1

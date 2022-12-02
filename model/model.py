@@ -23,11 +23,15 @@ def ReferenceModel(input_shape):
 def ProjectModel(input_shape):
     inputs = Input(shape = input_shape[-1], name = 'Input')
     
-    x = Dense(param['Dense16'], activation='relu', name = 'Dense0')(inputs)
+    x = Dense(param['Dense16'], activation='swish', name = 'Dense0')(inputs)
     x = Dropout(param['Dropout'])(x)
     x = BatchNormalization()(x)
     
-    x = Dense(param['Dense16'], activation='relu', name = 'Dense1')(x)
+    x = Dense(param['Dense16'], activation='swish', name = 'Dense1')(x)
+    x = Dropout(param['Dropout'])(x)
+    x = BatchNormalization()(x)
+    
+    x = Dense(param['Dense16'], activation='swish', name = 'Dense2')(x)
     x = Dropout(param['Dropout'])(x)
     x = BatchNormalization()(x)
     
