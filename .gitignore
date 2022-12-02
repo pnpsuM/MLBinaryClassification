@@ -1,2 +1,6 @@
 
 *.v2
+*.pyc
+*.idea
+*.xml
+*.pyc

@@ -6,12 +6,13 @@ from keras.callbacks import TensorBoard
 import tensorflow as tf
 import pandas as pd
 
-param = {'Dense16':16, 'Dense8':8, 'Dense32':32, 'Dense64':64, 'Dense128': 128, 'Dropout': 0.2}
+param = {'Dense16':16, 'Dense8':8, 'Dense32':32, 'Dense64':64, 'Dense128': 128, 'Dropout': 0.3}
 
 def ReferenceModel(input_shape):
     inputs = Input(shape = input_shape[-1], name = 'Input')
     x = Dense(param['Dense16'], activation='relu', name = 'Dense0')(inputs)
     x = Dense(param['Dense8'], activation='relu', name = 'Dense1')(x)
+    
     outputs = Dense(1, activation='sigmoid', name = 'Output')(x)
     model = Model(inputs = inputs, outputs = outputs, name = 'ReferenceModel')
     model.compile(loss = 'binary_crossentropy', optimizer='adam')
@@ -22,15 +23,11 @@ def ReferenceModel(input_shape):
 def ProjectModel(input_shape):
     inputs = Input(shape = input_shape[-1], name = 'Input')
     
-    x = Dense(param['Dense16'], activation='tanh', name = 'Dense0')(inputs)
+    x = Dense(param['Dense16'], activation='relu', name = 'Dense0')(inputs)
     x = Dropout(param['Dropout'])(x)
     x = BatchNormalization()(x)
     
-    x = Dense(param['Dense16'], activation='tanh', name = 'Dense1')(x)
-    x = Dropout(param['Dropout'])(x)
-    x = BatchNormalization()(x)
-    
-    x = Dense(param['Dense16'], activation='tanh', name = 'Dense2')(x)
+    x = Dense(param['Dense16'], activation='relu', name = 'Dense1')(x)
     x = Dropout(param['Dropout'])(x)
     x = BatchNormalization()(x)
     
@@ -55,7 +52,8 @@ def DefCallbacks(VERSION : str, **paths):
     """
     callbacks = []
     if 'CP' in paths.keys():
-        callbacks.append(ModelCheckpoint(filepath = paths['CP'], monitor = 'val_loss', save_best_only = True))
+        callbacks.append(ModelCheckpoint(filepath = paths['CP'], monitor = 'val_loss', 
+                                         save_best_only = True))
     if 'TB' in paths.keys():
         callbacks.append(TensorBoard(log_dir=paths['TB'], histogram_freq = 20))
     
@@ -84,7 +82,7 @@ def PerformanceCheck(model, CP_path, data, DATA_DIR):
             match += 1
         else:
             nomatch += 1
-
+            
     print(f'{model.name}_Accuracy : {match/data_check.shape[-2] * 100 : .2f} %')
     temp = pd.DataFrame(pd.read_csv(DATA_DIR + "test.csv")['PassengerId'])
     temp['Survived'] = data_check['final']
