@@ -42,7 +42,7 @@ class Titanic():
     self.IfChildOrElder()
     self.FillOut()
     self.FamilySurvival()
-    self._data = self._data.drop(columns = ['Age','Cabin','Name','Last_Name',
+    self._data = self._data.drop(columns = ['Age','Cabin','Name','Last_Name', 'Family_Size',
                                             'Parch', 'SibSp','Ticket', 'Embarked'])
     self._data.to_csv(prepath + f"/preprocessed_{VERSION}.csv", index = False)
     self.FeatureEncoding()
@@ -65,10 +65,14 @@ class Titanic():
   
   def FamilySizeExtraction(self):    
     self._data['Family_Size'] = self._data['Parch'] + self._data['SibSp'] + 1
+    self._data.loc[:,'Big_Family'] = 0
+    self._data.loc[(self._data['Family_Size'] > 5),'Big_Family'] = 1
+    # self._data.loc[:,'Small_Family'] = 0
+    # self._data.loc[(self._data['Family_Size'] < 2),'Small_Family'] = 1
 
-  def IfChildOrElder(self):    
-    self._data.loc[:,'Child'] = 1
-    self._data.loc[(self._data['Age'] > 20),'Child'] = 0
+  def IfChildOrElder(self):
+    self._data.loc[:,'Baby'] = 1
+    self._data.loc[(self._data['Age'] > 4),'Baby'] = 0
     self._data.loc[:,'Elder'] = 1
     self._data.loc[(self._data['Age'] < 50),'Elder'] = 0
     
@@ -77,37 +81,23 @@ class Titanic():
     self._data['Fare'].fillna(fa['Fare'].median(), inplace = True)
     
   def FamilySurvival(self):
-    # DEFAULT_SURVIVAL_VALUE = 0
-    # self._data['Last_Name'] = self._data['Name'].apply(lambda x: str.split(x, ",")[0])
-    # self._data['Family_Survival'] = DEFAULT_SURVIVAL_VALUE
-    # # Initialize Fam_Sur column with 0.5
-    # for _, group_df in self._data[['Survived','Name', 'Last_Name', 'Fare', 'Ticket', 'PassengerId',
-    #                                 'SibSp', 'Parch', 'Age', 'Type']].groupby(['Last_Name', 'Ticket']):
-    #   # Same LN and Fare => Family Group, and makes df out of them
-    #   if (len(group_df)) != 1:
-    #     # When a family group is found
-    #     cnt = group_df.loc[group_df['Type'] != 'test', 'Survived'].sum()
-    #     cnt /= len(group_df.loc[group_df['Type'] != 'test'])
-    #     for i, row in group_df.iterrows():
-    #       pass_id = row['PassengerId']
-    #       self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = cnt
-          
     DEFAULT_SURVIVAL_VALUE = 0.5
     self._data['Last_Name'] = self._data['Name'].apply(lambda x: str.split(x, ",")[0])
     self._data['Family_Survival'] = DEFAULT_SURVIVAL_VALUE
     # Initialize Fam_Sur column with 0.5
-    for group, group_df in self._data[['Survived','Name', 'Last_Name', 'Fare', 'Ticket', 'PassengerId',
-                                    'SibSp', 'Parch', 'Age', 'Cabin']].groupby(['Last_Name', 'Ticket']):
+    for _, group_df in self._data[['Survived','Name', 'Last_Name', 'Fare', 'Ticket', 'PassengerId',
+                                    'SibSp', 'Parch', 'Age', 'Type']].groupby(['Last_Name', 'Ticket']):
       # Same LN and Fare => Family Group, and makes df out of them
       if (len(group_df)) != 1:
         # When a family group is found
+        cnt = group_df.loc[group_df['Type'] != 'test', 'Survived'].sum()
+        cnt /= len(group_df.loc[group_df['Type'] != 'test'])
         for i, row in group_df.iterrows():
-          smax = group_df.drop(i)['Survived'].max()
-          smin = group_df.drop(i)['Survived'].min()
           pass_id = row['PassengerId']
-          if (smax == 1.):
+          self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = cnt
+          if (cnt >= .7):
             self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 1
-          elif (smin == 0.):
+          else:
             self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 0
     for _, group_df in self._data.groupby('Ticket'):
       if (len(group_df) != 1):
@@ -116,22 +106,51 @@ class Titanic():
             smax = group_df.drop(i)['Survived'].max()
             smin = group_df.drop(i)['Survived'].min()
             pass_id = row['PassengerId']
-            if (smax == 1.):
+            if (smax != 0.):
               self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 1
             elif (smin == 0.):
               self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 0
+          
+    # DEFAULT_SURVIVAL_VALUE = 0.5
+    # self._data['Last_Name'] = self._data['Name'].apply(lambda x: str.split(x, ",")[0])
+    # self._data['Family_Survival'] = DEFAULT_SURVIVAL_VALUE
+    # # Initialize Fam_Sur column with 0.5
+    # for group, group_df in self._data[['Survived','Name', 'Last_Name', 'Fare', 'Ticket', 'PassengerId',
+    #                                 'SibSp', 'Parch', 'Age', 'Cabin']].groupby(['Last_Name', 'Ticket']):
+    #   # Same LN and Fare => Family Group, and makes df out of them
+    #   if (len(group_df)) != 1:
+    #     # When a family group is found
+    #     for i, row in group_df.iterrows():
+    #       smax = group_df.drop(i)['Survived'].max()
+    #       smin = group_df.drop(i)['Survived'].min()
+    #       pass_id = row['PassengerId']
+    #       if (smax == 1.):
+    #         self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 1
+    #       elif (smin == 0.):
+    #         self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 0
+    # for _, group_df in self._data.groupby('Ticket'):
+    #   if (len(group_df) != 1):
+    #     for i, row in group_df.iterrows():
+    #       if (row['Family_Survival'] == 0) or (row['Family_Survival'] == 0.5):
+    #         smax = group_df.drop(i)['Survived'].max()
+    #         smin = group_df.drop(i)['Survived'].min()
+    #         pass_id = row['PassengerId']
+    #         if (smax == 1.):
+    #           self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 1
+    #         elif (smin == 0.):
+    #           self._data.loc[self._data['PassengerId'] == pass_id, 'Family_Survival'] = 0
     
   def FeatureEncoding(self):
     # Encoding features
     target_col = ["Survived"]
     id_dataset = ["Type"]
     cat_cols   = self._data.nunique()[self._data.nunique() < 12].keys().tolist()
-    cat_cols   = [x for x in cat_cols if x != 'Family_Size']
+    cat_cols   = [x for x in cat_cols]# if x != 'Family_Survival']
     print(cat_cols)
     
     # numerical columns
     num_cols   = [x for x in self._data.columns if (x not in cat_cols + target_col + \
-      id_dataset and x != 'Family_Survival' and x != 'Family_Size')]
+      id_dataset)]# and x != 'Family_Survival')]
     # Binary columns with 2 values
     bin_cols   = self._data.nunique()[self._data.nunique() == 2].keys().tolist()
     # Columns more than 2 values

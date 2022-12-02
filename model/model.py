@@ -6,7 +6,7 @@ from keras.callbacks import TensorBoard
 import tensorflow as tf
 import pandas as pd
 
-param = {'Dense16':16, 'Dense8':8, 'Dense32':32, 'Dense64':64, 'Dense128': 128, 'Dropout': 0.1}
+param = {'Dense16':16, 'Dense8':8, 'Dense32':32, 'Dense64':64, 'Dense128': 128, 'Dropout': 0.3}
 
 def ReferenceModel(input_shape):
     inputs = Input(shape = input_shape[-1], name = 'Input')
@@ -23,15 +23,11 @@ def ReferenceModel(input_shape):
 def ProjectModel(input_shape):
     inputs = Input(shape = input_shape[-1], name = 'Input')
     
-    x = Dense(param['Dense32'], activation='swish', name = 'Dense0')(inputs)
+    x = Dense(param['Dense16'], activation='relu', name = 'Dense0')(inputs)
     x = Dropout(param['Dropout'])(x)
     x = BatchNormalization()(x)
     
-    x = Dense(param['Dense128'], activation='swish', name = 'Dense1')(x)
-    x = Dropout(param['Dropout'])(x)
-    x = BatchNormalization()(x)
-    
-    x = Dense(param['Dense32'], activation='swish', name = 'Dense2')(x)
+    x = Dense(param['Dense16'], activation='relu', name = 'Dense1')(x)
     x = Dropout(param['Dropout'])(x)
     x = BatchNormalization()(x)
     
