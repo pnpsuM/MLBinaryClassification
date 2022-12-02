@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 class Titanic():
   def __init__(self, path = f'datasets/', **kwargs):
@@ -20,11 +22,10 @@ class Titanic():
       df_test = pd.read_csv(path + "test.csv")
       df_train['Type'] = 'train'
       df_test['Type'] = 'test'
-      self._data = pd.concat([df_train, df_test])
-      self._data = self._data.reset_index()
+      self._data = pd.concat([df_train, df_test], ignore_index=True)
       # Concatenate train and test data and save it in a Variable
     else:
-      df_test = pd.read_csv(path + "test.csv", index = False)
+      df_test = pd.read_csv(path + "test.csv")
       df_test['Type'] = 'test'
       self._data = df_test
       
@@ -41,11 +42,11 @@ class Titanic():
     self.TitleExtraction(map, titles)
     self.FamilySizeExtraction()
     self.IfBabyOrElder()
-    self.FillOut()
+    self.FareModification()
     self.FamilySurvival()
-    self._data = self._data.drop(columns = ['Age','Cabin','Name','Last_Name', 'Family_Size',
+    self._data = self._data.drop(columns = ['Cabin','Name','Last_Name', 'Family_Size',
                                             'Parch', 'SibSp','Ticket', 'Embarked'])
-    self._data.to_csv(prepath + f"/preprocessed_{VERSION}.csv", index = False)
+    self._data.to_csv(prepath + f"/preprocessed_{VERSION}.csv", index=False)
     self.FeatureEncoding()
     print("Done Preprocessing.")
     
@@ -77,7 +78,7 @@ class Titanic():
     self._data.loc[:,'Elder'] = 1
     self._data.loc[(self._data['Age'] < 50),'Elder'] = 0
     
-  def FillOut(self):
+  def FareModification(self):
     fa = self._data[self._data["Pclass"] == 3]
     self._data['Fare'].fillna(fa['Fare'].median(), inplace = True)
     self._data["Fare"] = (self._data["Fare"] / self._data.groupby("Ticket")["Fare"].transform("count")).astype('float')
@@ -148,19 +149,16 @@ class Titanic():
     id_dataset = ["Type"]
     cat_cols = self._data.nunique()[self._data.nunique() < 12].keys().tolist()
     cat_cols = [x for x in cat_cols]  # if x != 'Family_Survival']
-    print(cat_cols)
 
     # numerical columns
     num_cols = [x for x in self._data.columns if (x not in cat_cols + target_col + \
                                                   id_dataset)]  # and x != 'Family_Survival')]
     # Binary columns with 2 values
     bin_cols = self._data.nunique()[self._data.nunique() == 2].keys().tolist()
-    bin_cols.remove('Survived')
-    print("2", bin_cols)
+    bin_cols.remove('Survived') # excluded NA value in "test" dataset
+
     # Columns more than 2 values
     categorical_cols = [i for i in cat_cols if (i not in bin_cols) and (i != 'Survived')]
-    print("3",categorical_cols)
-    print("4",num_cols)
 
     # Label encoding Binary columns
     for i in bin_cols :
@@ -175,7 +173,6 @@ class Titanic():
     self._data = self._data.drop(columns = num_cols,axis = 1)
     self._data = self._data.merge(self._scaled_data, left_index = True,right_index = True,how = "left")
     self._data = self._data.drop(columns = ['PassengerId'],axis = 1)
-    print(self._data.columns)
     # Target = 1st column
     cols = self._data.columns.tolist()
     cols.insert(0, cols.pop(cols.index('Survived')))
@@ -206,4 +203,12 @@ class Titanic():
     print("Returned Data Dictionary")
     
     return self.data_dict
+
+  def GetHeatMap(self):
+    colormap = plt.cm.RdBu
+    plt.figure(figsize=(14, 12))
+    plt.title('Pearson Correlation of Features', y=1.05, size=15)
+    sns.heatmap(self._train.astype(float).corr(), linewidths=0.1, vmax=1.0,
+                square=True, cmap=colormap, linecolor='white', annot=True)
+    plt.show()
     

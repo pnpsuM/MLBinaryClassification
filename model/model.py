@@ -86,7 +86,7 @@ def PerformanceCheck(model, CP_path, data, DATA_DIR):
             match += 1
         else:
             nomatch += 1
-            
+    # print(data_check.to_csv("C:/Users/tungc/Desktop/check_score.csv"))
     print(f'{model.name}_Accuracy : {match/data_check.shape[-2] * 100 : .2f} %')
     temp = pd.DataFrame(pd.read_csv(DATA_DIR + "test.csv")['PassengerId'])
     temp['Survived'] = data_check['final']
