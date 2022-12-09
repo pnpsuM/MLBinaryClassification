@@ -18,7 +18,7 @@ def ReferenceModel(input_shape):
     model.compile(loss = 'binary_crossentropy', optimizer='adam')
     model.summary()
 
-    return model
+    return model, outputs
 
 def ProjectModel(input_shape):
     inputs = Input(shape = input_shape[-1], name = 'Input')
